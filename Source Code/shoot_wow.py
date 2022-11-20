@@ -58,7 +58,7 @@ TILE_TYPES = 21
 MAX_LEVELS = 3
 screen_scroll = 0
 bg_scroll = 0
-level = 3
+level = 1
 start_game = False
 page = "menu"
 score = 0
@@ -113,16 +113,10 @@ for x in range(TILE_TYPES):
 
 leaderBoard = []
 if Path(highscore_file).is_file() == False:
-    tmp_list1 = ['xxx', 0]
-    tmp_list2 = ['xxx', 0]
-    tmp_list3 = ['xxx', 0]
-    tmp_list4 = ['xxx', 0]
-    tmp_list5 = ['xxx', 0]
-    leaderBoard.append(tmp_list1)
-    leaderBoard.append(tmp_list2)
-    leaderBoard.append(tmp_list3)
-    leaderBoard.append(tmp_list4)
-    leaderBoard.append(tmp_list5)
+    tmp_list = ['xxx', 0]
+    for x in range(5):
+        leaderBoard.append(tmp_list)
+
     with open("highscore.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         for x in range(5):
@@ -225,9 +219,9 @@ class Gunner(pygame.sprite.Sprite):
             # reset temp list of images
             temp_list = []
             # count number of files in the folder
-            num_of_frames = len(os.listdir(f"img/{self.char_type}/{animation}"))
+            num_of_frames = len(os.listdir(f"../Shoot-wow/Release/{self.char_type}/{animation}"))
             for i in range(num_of_frames):
-                img = pygame.image.load(f"img/{self.char_type}/{animation}/{i}.png").convert_alpha()
+                img = pygame.image.load(f"../Shoot-wow/Release/{self.char_type}/{animation}/{i}.png").convert_alpha()
                 img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
                 temp_list.append(img)
             self.animation_list.append(temp_list)
@@ -645,13 +639,17 @@ def inpt():
                     word += chr(event.key)                
                 if event.key == pygame.K_RETURN:
                     done = False
+                    page = 'menu'
             draw_text(word , font, "white", 500, 350)
             pygame.display.flip()
     word = word.strip('\r')
     return word
 
 run = True
-page = "get_score"
+done = False
+song = True
+word=''
+page = 'get_score'
 while run:
     clock.tick(FPS)
     if start_game == False:
@@ -682,35 +680,57 @@ while run:
         elif page == "get_score":
             screen.blit(back_10, (0, 0))
             draw_text(f"Your Score: {score}", font, "white", 50, 280)
+            if song != done:
+                song = done
+                if endgame_text == "congrat!!":
+                    congrat_fx.play()
+                else:
+                    gameover_fx.play()
             if endgame_text == "congrat!!":
                 draw_text(f"{endgame_text}", font_over, "white", 95, 100)
-                congrat_fx.play()
             else:
                 draw_text(f"{endgame_text}", font_over, "white", 80, 100)
-                gameover_fx.play()
             name = []
-            text = inpt()
-            name.append(text)
-            name.append(score)
-            leaderBoard.append(name)
-            for x in range(5):
-                if score > int(leaderBoard[x][1]):
-                    tmp = 1
-                    leaderBoard.remove(leaderBoard[4])
-                    while 4 - tmp >= x:
-                        leaderBoard[4 - tmp + 1] = leaderBoard[4 - tmp]
-                        tmp += 1
-                    leaderBoard[x] = name
-                    break
-
-            with open("highscore.csv", 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=',')
+            draw_text("Please enter your name: ",font, "white", 50,350)            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_BACKSPACE:
+                        word = word[:-1]
+                    if event.key <= 127 and event.key != pygame.K_BACKSPACE:
+                        word += chr(event.key)                
+                    if event.key == pygame.K_RETURN:
+                        done = True
+                        
+            draw_text(word , font, "white", 500, 350)
+            if done:
+                word = word.strip('\r')
+                name.append(word)
+                name.append(score)
+                leaderBoard.append(name)
                 for x in range(5):
-                    writer.writerow(leaderBoard[x])
-            page = "menu"
-            score = 0
-            player.score = 0
-            score_tmp = 0
+                    if score > int(leaderBoard[x][1]):
+                        tmp = 1
+                        leaderBoard.remove(leaderBoard[4])
+                        while 4 - tmp >= x:
+                            leaderBoard[4 - tmp + 1] = leaderBoard[4 - tmp]
+                            tmp += 1
+                        leaderBoard[x] = name
+                        break
+
+                with open("highscore.csv", 'w', newline='') as csvfile:
+                    writer = csv.writer(csvfile, delimiter=',')
+                    for x in range(5):
+                        writer.writerow(leaderBoard[x])
+                page = 'menu'
+                score = 0
+                player.score = 0
+                score_tmp = 0
+                word = ''
+                done = False
+                song = True
     else:
         draw_bg()
         world.draw()
